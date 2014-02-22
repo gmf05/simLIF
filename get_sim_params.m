@@ -12,7 +12,7 @@ global gL_e
 global gL_i
 global EL_e
 global EL_i
-global I0
+global ImVs
 global Vmax
 global Vth
 global V0
@@ -47,7 +47,7 @@ global fd_i
 
 % time parameters
 dt = 1e-4; % time step [s]
-NT = 3e3; % length of sim [tauime steps]
+NT = 5e3; % length of sim [tauime steps]
 
 % network size, topology
 E_cell_dim = [50 50];
@@ -55,10 +55,11 @@ I_cell_dim = [25 25];
 network_topology = 'sheet';
 
 % PHYSICAL PARAMETERS:
-% parameter | description [units]
+% parameter | description [units] 
 
 % input current
-I0 = 6; % input current [nA]
+I0 = 10; % input current [nA]
+ImVs = I0*1000; % adjusted current so dV/dt is in millivolts/sec
 
 % capacitance & reversal potentials---------------------------
 % See Table 1, Hall & Kuhlmann 2013
@@ -98,18 +99,18 @@ k_i = 20; % saturation rate of synaptic conductance for I cells
 P0 = 1; % resting prob. of synaptic release
 
 % synaptic connectivity parameters ----------------------------
-sigma_e = 2; % width of E cell kernel
-sigma_i = 3.75; % width of I cell kernel (3.75 or 1)
-% W_ee = 1.5; % synaptic strength E->E
-W_ei = 1.5; % synaptic strength E->I (1.5 or 4)
-W_ie = 4.5; % synaptic strength I->E (4.5 or 14)
-W_ii = 4.5; % synaptic strength I->I (4.5 or 1.5)
 % sigma_e = 2; % width of E cell kernel
-% sigma_i = 1; % width of I cell kernel (3.75 or 1)
-W_ee = 10; % synaptic strength E->E
-% W_ei = 4; % synaptic strength E->I (1.5 or 4)
+% sigma_i = 3.75; % width of I cell kernel (3.75 or 1)
+% W_ee = 1.5; % synaptic strength E->E
+% W_ei = 1.5; % synaptic strength E->I (1.5 or 4)
 % W_ie = 4.5; % synaptic strength I->E (4.5 or 14)
-% W_ii = 1.5; % synaptic strength I->I (4.5 or 1.5)
+% W_ii = 4.5; % synaptic strength I->I (4.5 or 1.5)
+sigma_e = 2; % width of E cell kernel
+sigma_i = 1; % width of I cell kernel (3.75 or 1)
+W_ee = 10; % synaptic strength E->E
+W_ei = 4; % synaptic strength E->I (1.5 or 4)
+W_ie = 4.5; % synaptic strength I->E (4.5 or 14)
+W_ii = 1.5; % synaptic strength I->I (4.5 or 1.5)
 
 % presynaptic depression parameters---------------------------
 tau_rel_e = 2e-1; % [s]

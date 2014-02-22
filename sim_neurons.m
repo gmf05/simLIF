@@ -16,7 +16,7 @@ global gL_e
 global gL_i
 global EL_e
 global EL_i
-global I0
+global ImVs
 global Vmax
 global Vth
 global V0
@@ -81,16 +81,16 @@ for i = 1:E_cell_dim(1)
   count = count + E_cell_dim(2);
 end
 
-IEratio1 = I_cell_dim(1)/E_cell_dim(1);
-IEratio2 = I_cell_dim(2)/E_cell_dim(2);
+EIratio1 = E_cell_dim(1)/I_cell_dim(1);
+EIratio2 = E_cell_dim(2)/I_cell_dim(2);
 for i = 1:I_cell_dim(1)
   % no coordinate remapping (NOT advised)
 %   coord(count + (1:I_cell_dim(2)), 1) = i;
 %   coord(count + (1:I_cell_dim(2)), 2) = 1:I_cell_dim(2);
   
   % coordinate remapping
-  coord(count + (1:I_cell_dim(2)), 1) = round(i*IEratio1);
-  coord(count + (1:I_cell_dim(2)), 2) = round((1:I_cell_dim(2))*IEratio2);
+  coord(count + (1:I_cell_dim(2)), 1) = round(i*EIratio1);
+  coord(count + (1:I_cell_dim(2)), 2) = round((1:I_cell_dim(2))*EIratio2);
   
   count = count + I_cell_dim(2);
 end
@@ -158,7 +158,7 @@ I = zeros(N_cells, 1);
 arrayMap = reshape(1:N_E_cells, E_cell_dim);
 mid1 = 0.5*E_cell_dim(1);
 mid2 = 0.5*E_cell_dim(2);
-I(reshape(arrayMap(mid1-1:mid1+1,mid2-1:mid2+1),1,[])) = I0*1000;
+I(reshape(arrayMap(mid1-1:mid1+1,mid2-1:mid2+1),1,[])) = ImVs;
 
 % main time loop----------------------------------------------
 fprintf('Computing voltages\n');
