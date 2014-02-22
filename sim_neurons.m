@@ -1,4 +1,4 @@
-function [V,spikes,time] = sim_neurons()
+function [V,spikes,gs,time] = sim_neurons()
 
 fprintf('Simulating network\n');
 CLOCK = tic();
@@ -88,44 +88,45 @@ end
 % calculate distances
 load NN_dist_matrix
 
-rho = unifrnd(0.5,1.5,[1,N_cells]); % randomness of connection strength
-D = zeros(N_cells);
-
-% distance function depends on network topology
-switch network_topology
-  case 'sheet'
-    network_dist = @(X1,X2) norm(X1-X2,2);
-    
-  case' tube'
-    []; % NEED TO FILL THIS IN
-    network_dist = @(X1,X2) norm(X1-X2,2);
-end
-
-
-% loop over cell pairs
-tic
-isIcell1 = 0;
-for c1 = 1:N_cells
-  if c1==N_E_cells+1, isIcell1 = 1; end
-  isIcell2 = 0;
-  i = coord(c1,1);  j = coord(c1,2);
-  
-  for c2 = 1:N_cells 
-    if c2==N_E_cells+1, isIcell2 = 1; end
-    l = coord(c2,1);  m = coord(c2,2);
-    Wc = W(1+isIcell1, 1+isIcell2);
-%     d = network_dist([i,j],[l,m]);
-%     d = norm([i,j]-[l,m],2);
-    d = sqrt((i-l)^2+(j-m)^2); %FASTEST
-%     d = sqrt((i-l)^2+(j-m)^2);
-    D(c1,c2) = Wc*rho(c1)*exp(-d^2/sigma(1+isIcell2)^2);
-  end
-  
-end
-toc(CLOCK);
-save NN_dist_matrix D
+% % % rho = unifrnd(0.5,1.5,[1,N_cells]); % randomness of connection strength
+% % % D = zeros(N_cells);
+% % % 
+% % % % distance function depends on network topology
+% % % switch network_topology
+% % %   case 'sheet'
+% % %     network_dist = @(X1,X2) norm(X1-X2,2);
+% % %     
+% % %   case' tube'
+% % %     []; % NEED TO FILL THIS IN
+% % %     network_dist = @(X1,X2) norm(X1-X2,2);
+% % % end
+% % % 
+% % % 
+% % % % loop over cell pairs
+% % % tic
+% % % isIcell1 = 0;
+% % % for c1 = 1:N_cells
+% % %   if c1==N_E_cells+1, isIcell1 = 1; end
+% % %   isIcell2 = 0;
+% % %   i = coord(c1,1);  j = coord(c1,2);
+% % %   
+% % %   for c2 = 1:N_cells 
+% % %     if c2==N_E_cells+1, isIcell2 = 1; end
+% % %     l = coord(c2,1);  m = coord(c2,2);
+% % %     Wc = W(1+isIcell1, 1+isIcell2);
+% % % %     d = network_dist([i,j],[l,m]);
+% % % %     d = norm([i,j]-[l,m],2);
+% % %     d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+% % % %     d = sqrt((i-l)^2+(j-m)^2);
+% % %     D(c1,c2) = Wc*rho(c1)*exp(-d^2/sigma(1+isIcell2)^2);
+% % %   end
+% % %   
+% % % end
+% % % toc(CLOCK);
+% % % save NN_dist_matrix D
 
 % initialize arrays-------------------------------------------
+gs = zeros(N_cells, NT, 3); % all conductances
 V = zeros(N_cells, NT); % all voltages
 spikes = zeros(N_cells, NT); % raster plot
 Vt = concat_EI(-73.6, -81.6); % current voltage initialized to val1 for E, val2 for I
@@ -142,10 +143,12 @@ P_rel_i = P0 * ones(N_cells, 1); % synaptic release prob.
 I = zeros(N_cells, 1);
 
 % target input current to middle of grid
+% NOTE: We also multiply I by 1000 so that I/C will be in units
+% millivolt/sec, matching the units of V, rather than Volt/sec
 arrayMap = reshape(1:N_E_cells, E_cell_dim);
 mid1 = 0.5*E_cell_dim(1);
 mid2 = 0.5*E_cell_dim(2);
-I(reshape(arrayMap(mid1-1:mid1+1,mid2-1:mid2+1),1,[])) = I0;
+I(reshape(arrayMap(mid1-1:mid1+1,mid2-1:mid2+1),1,[])) = I0*1000;
 
 % main time loop----------------------------------------------
 fprintf('Computing voltages\n');
@@ -233,10 +236,13 @@ for t = 1:NT
   end
   
   % update g_s now that voltage is computed
-  % SHOULD THIS BE RK4 integration????
-  g_e = g_e3;
-  g_i = g_i3;
-  g_tr = g_tr3;
+  % CHECK INTEGRATION METHOD HERE
+%   g_e = g_e3;
+%   g_i = g_i3;
+%   g_tr = g_tr3;
+  g_e = (g_e+4*g_e2+g_e3)/6;
+  g_i = (g_i+4*g_i2+g_i3)/6;
+  g_tr = (g_tr+4*g_tr2+g_tr3)/6;
   
   % save voltage, spikes
   V(:,t) = Vt;
@@ -249,6 +255,11 @@ for t = 1:NT
   % release probability drops by factor fd_s < 1
   P_rel_e(spikes(:,t)==1) = fd_e * P_rel_e(spikes(:,t)==1);
   P_rel_i(spikes(:,t)==1) = fd_i * P_rel_i(spikes(:,t)==1);
+  
+  % temporary storage -- checking this
+  gs(:,t,1) = g_e;
+  gs(:,t,2) = g_i;
+  gs(:,t,3) = g_tr;
   
 end
 
