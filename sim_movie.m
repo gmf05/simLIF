@@ -1,8 +1,8 @@
 function sim_movie(V,Cax)
 
 if nargin<2
-%   Cax = [min(min(V)), max(max(V))];
-  Cax = [-75 -55]; % good for voltage
+  Cax = [min(min(V)), max(max(V))];
+%   Cax = [-75 -55]; % good for voltage
 end
 
 global dt
@@ -26,6 +26,6 @@ for t = 1:NT
   subplot(2,1,2)
   imagesc(reshape(V(N_E_cells+1:end,t),I_cell_dim));
   caxis(Cax);
-
+  
   pause(t_delay);
 end

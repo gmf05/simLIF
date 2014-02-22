@@ -133,6 +133,7 @@ for c1 = 1:N_cells
   
 end
 toc(CLOCK);
+% error('asdf')
 % % % save NN_dist_matrix D
 
 % initialize arrays-------------------------------------------
@@ -250,12 +251,12 @@ for t = 1:NT
   
   % update g_s now that voltage is computed
   % CHECK INTEGRATION METHOD HERE
-%   g_e = g_e3;
-%   g_i = g_i3;
-%   g_tr = g_tr3;
-  g_e = (g_e+4*g_e2+g_e3)/6;
-  g_i = (g_i+4*g_i2+g_i3)/6;
-  g_tr = (g_tr+4*g_tr2+g_tr3)/6;
+  g_e = g_e3;
+  g_i = g_i3;
+  g_tr = g_tr3;
+%   g_e = (g_e+4*g_e2+g_e3)/6;
+%   g_i = (g_i+4*g_i2+g_i3)/6;
+%   g_tr = (g_tr+4*g_tr2+g_tr3)/6;
   
   % save voltage, spikes
   V(:,t) = Vt;
