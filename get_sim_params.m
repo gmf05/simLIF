@@ -47,7 +47,7 @@ global fd_i
 
 % time parameters
 dt = 1e-4; % time step [s]
-NT = 10e3; % length of sim [tauime steps]
+NT = 3e3; % length of sim [tauime steps]
 
 % network size, topology
 E_cell_dim = [50 50];
@@ -100,13 +100,13 @@ P0 = 1; % resting prob. of synaptic release
 % synaptic connectivity parameters ----------------------------
 sigma_e = 2; % width of E cell kernel
 sigma_i = 3.75; % width of I cell kernel (3.75 or 1)
-W_ee = 1.5; % synaptic strength E->E
+% W_ee = 1.5; % synaptic strength E->E
 W_ei = 1.5; % synaptic strength E->I (1.5 or 4)
 W_ie = 4.5; % synaptic strength I->E (4.5 or 14)
 W_ii = 4.5; % synaptic strength I->I (4.5 or 1.5)
 % sigma_e = 2; % width of E cell kernel
 % sigma_i = 1; % width of I cell kernel (3.75 or 1)
-% W_ee = 10; % synaptic strength E->E
+W_ee = 10; % synaptic strength E->E
 % W_ei = 4; % synaptic strength E->I (1.5 or 4)
 % W_ie = 4.5; % synaptic strength I->E (4.5 or 14)
 % W_ii = 1.5; % synaptic strength I->I (4.5 or 1.5)

@@ -71,6 +71,9 @@ W = [W_ee W_ie; W_ei W_ii];
 fprintf('Calculating cell geometry\n');
 coord = zeros(N_cells, 2);
 
+% NOTE: Assumes for now that there are more E cells than I cells
+% and remaps coord of I cells to approximate pos. relative to E cells
+% if there are more I cells, this mapping should be reversed
 count = 0;
 for i = 1:E_cell_dim(1)
   coord(count + (1:E_cell_dim(2)), 1) = i;
@@ -78,50 +81,58 @@ for i = 1:E_cell_dim(1)
   count = count + E_cell_dim(2);
 end
 
+IEratio1 = I_cell_dim(1)/E_cell_dim(1);
+IEratio2 = I_cell_dim(2)/E_cell_dim(2);
 for i = 1:I_cell_dim(1)
-  coord(count + (1:I_cell_dim(2)), 1) = i;
-  coord(count + (1:I_cell_dim(2)), 2) = 1:I_cell_dim(2);
+  % no coordinate remapping (NOT advised)
+%   coord(count + (1:I_cell_dim(2)), 1) = i;
+%   coord(count + (1:I_cell_dim(2)), 2) = 1:I_cell_dim(2);
+  
+  % coordinate remapping
+  coord(count + (1:I_cell_dim(2)), 1) = round(i*IEratio1);
+  coord(count + (1:I_cell_dim(2)), 2) = round((1:I_cell_dim(2))*IEratio2);
+  
   count = count + I_cell_dim(2);
 end
 
 % calculate distances
-load NN_dist_matrix
+% load NN_dist_matrix
 
-% % % rho = unifrnd(0.5,1.5,[1,N_cells]); % randomness of connection strength
-% % % D = zeros(N_cells);
-% % % 
-% % % % distance function depends on network topology
-% % % switch network_topology
-% % %   case 'sheet'
-% % %     network_dist = @(X1,X2) norm(X1-X2,2);
-% % %     
-% % %   case' tube'
-% % %     []; % NEED TO FILL THIS IN
-% % %     network_dist = @(X1,X2) norm(X1-X2,2);
-% % % end
-% % % 
-% % % 
-% % % % loop over cell pairs
-% % % tic
-% % % isIcell1 = 0;
-% % % for c1 = 1:N_cells
-% % %   if c1==N_E_cells+1, isIcell1 = 1; end
-% % %   isIcell2 = 0;
-% % %   i = coord(c1,1);  j = coord(c1,2);
-% % %   
-% % %   for c2 = 1:N_cells 
-% % %     if c2==N_E_cells+1, isIcell2 = 1; end
-% % %     l = coord(c2,1);  m = coord(c2,2);
-% % %     Wc = W(1+isIcell1, 1+isIcell2);
-% % % %     d = network_dist([i,j],[l,m]);
-% % % %     d = norm([i,j]-[l,m],2);
-% % %     d = sqrt((i-l)^2+(j-m)^2); %FASTEST
-% % % %     d = sqrt((i-l)^2+(j-m)^2);
-% % %     D(c1,c2) = Wc*rho(c1)*exp(-d^2/sigma(1+isIcell2)^2);
-% % %   end
-% % %   
-% % % end
-% % % toc(CLOCK);
+rho = unifrnd(0.5,1.5,[1,N_cells]); % randomness of connection strength
+D = zeros(N_cells);
+
+% distance function depends on network topology
+% switch network_topology
+%   case 'sheet'
+%     network_dist = @(X1,X2) norm(X1-X2,2);
+%     
+%   case' tube'
+%     []; % NEED TO FILL THIS IN
+%     network_dist = @(X1,X2) norm(X1-X2,2);
+% end
+
+
+% loop over cell pairs
+tic
+isIcell1 = 0;
+for c1 = 1:N_cells
+  if c1==N_E_cells+1, isIcell1 = 1; end
+  isIcell2 = 0;
+  i = coord(c1,1);  j = coord(c1,2);
+  
+  for c2 = 1:N_cells 
+    if c2==N_E_cells+1, isIcell2 = 1; end
+    l = coord(c2,1);  m = coord(c2,2);
+    Wc = W(1+isIcell1, 1+isIcell2);
+%     d = network_dist([i,j],[l,m]);
+%     d = norm([i,j]-[l,m],2);
+    d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+%     d = sqrt((i-l)^2+(j-m)^2);
+    D(c1,c2) = Wc*rho(c1)*exp(-d^2/sigma(1+isIcell2)^2);
+  end
+  
+end
+toc(CLOCK);
 % % % save NN_dist_matrix D
 
 % initialize arrays-------------------------------------------
@@ -172,6 +183,9 @@ for t = 1:NT
   % compute new synaptic conductances g_s (Eqns 3-7)
   % basically, the equations are presented backwards
   % compute S_s (Eqn 7)
+%   DE = D(:,1:N_E_cells);
+%   yE = y(1:N_E_cells);
+%   S_e = DE*yE;
   S_e = D(:,1:N_E_cells)*y(1:N_E_cells);
   S_i = D(:,N_E_cells+1:end)*y(N_E_cells+1:end);
   
