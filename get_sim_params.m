@@ -1,5 +1,6 @@
 function get_sim_params()
 
+% declare global variables
 global dt
 global NT
 global E_cell_dim

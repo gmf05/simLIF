@@ -49,7 +49,6 @@ global tau_rel_i
 global fd_e
 global fd_i
 get_sim_params();
-
 time = (1:NT)*dt;
 N_E_cells = prod(E_cell_dim);
 N_I_cells = prod(I_cell_dim);
