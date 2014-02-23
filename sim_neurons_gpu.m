@@ -113,7 +113,8 @@ end
 % network_dist = @(i,j,l,m) sqrt((i-l)^2+(j-m)^2);
 % load NN_dist_matrix;
 
-rho = unifrnd(0.5,1.5,[1,N_cells]);
+% rho = unifrnd(0.5,1.5,[1,N_cells]);
+load('rho_instance','rho');
 tic
 for c1 = 1:N_cells
   i = coord(c1,1);  j = coord(c1,2);  r = rho(c1);
@@ -142,6 +143,7 @@ for c1 = 1:N_cells
     end
   end
 end
+
 
 toc(CLOCK);
 % save NN_dist_matrix D_e D_i
@@ -176,6 +178,12 @@ P_post_i2 = zeros(N_cells, 1); % post-syn. channel open prob.
 P_rel_e2 = P0 * ones(N_cells, 1); % synaptic release prob.
 P_rel_i2 = P0 * ones(N_cells, 1); % synaptic release prob.
 
+% arrays for GPU
+D_e_gpu = gpuArray(D_e);
+D_i_gpu = gpuArray(D_i);
+y_e_gpu = gpuArray(y_e);
+y_i_gpu = gpuArray(y_i);
+
 % target input current to middle of grid
 % NOTE: We also multiply I by 1000 so that I/C will be in units
 % millivolt/sec, matching the units of V, rather than Volt/sec
@@ -195,9 +203,12 @@ for t = 1:NT
   
   % first, compute new synaptic conductances g_s (Eqn 7 to Eqn 3)
   % compute S_s (Eqn 7)
-  S_e = D_e*y_e;
-  S_i = D_i*y_i;
+%   S_e = D_e*y_e;
+%   S_i = D_i*y_i;
   
+  S_e = gather(D_e_gpu*y_e_gpu);
+  S_i = gather(D_i_gpu*y_i_gpu);
+
   % compute alpha_s (Eqn 6)
   alpha_e = alpha_max_e * (1 - exp(-S_e ./ k_e));
   alpha_i = alpha_max_i * (1 - exp(-S_i ./ k_i));
@@ -282,10 +293,17 @@ for t = 1:NT
   
   % save voltage, spikes
   V(:,t) = Vt;
-  y_e = y_e*0; y_i = y_i*0;
-  y_e(Vt(1:N_E_cells)==Vmax) = 1;
-  y_i(Vt(N_E_cells+1:end)==Vmax) = 1;
   spikes(last_spike==time(t), t) = 1;
+  
+  % local
+%   y_e = y_e*0; y_i = y_i*0;
+%   y_e(Vt(1:N_E_cells)==Vmax) = 1;
+%   y_i(Vt(N_E_cells+1:end)==Vmax) = 1;
+  
+  % GPU
+  y_e_gpu = y_e_gpu*0; y_i_gpu = y_i_gpu*0;
+  y_e_gpu(Vt(1:N_E_cells)==Vmax) = 1;
+  y_i_gpu(Vt(N_E_cells+1:end)==Vmax) = 1;
   
   % CHECK THIS??
   % presynaptic depression at spiking cells
