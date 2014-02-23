@@ -61,6 +61,8 @@ network_topology = 'sheet';
 I0 = 6; % input current [nA]
 ImVs = I0*1000; % adjusted current so dV/dt is in millivolts/sec
 
+
+
 % capacitance & reversal potentials---------------------------
 % See Table 1, Hall & Kuhlmann 2013
 C_e = 0.5; % membrane capacitance for E cells [nF] <<<CHECK

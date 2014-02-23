@@ -229,7 +229,7 @@ for t = 1:NT
   else
     ghigh_ind = [];
   end
-  
+  g_ind = setdiff(1:N_cells,ghigh_ind); 
   g_tr(ghigh_ind) = g_tr_high;
   % for non-refractory cells, integrate g_tr
   g_tr2 = g_tr; g_tr3 = g_tr;
