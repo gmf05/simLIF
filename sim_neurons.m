@@ -64,8 +64,8 @@ EL = concat_EI(EL_e, EL_i);
 tau_tr = concat_EI(tau_tr_e, tau_tr_i);
 refract = [Trefract_e Trefract_i];
 refvec = concat_EI(Trefract_e, Trefract_i);
-sigma = [sigma_e sigma_i];
-W = [W_ee W_ie; W_ei W_ii];
+% sigma = [sigma_e sigma_i];
+% W = [W_ee W_ie; W_ei W_ii];
 
 % setup coordinates
 fprintf('Calculating cell geometry\n');
@@ -96,10 +96,8 @@ for i = 1:I_cell_dim(1)
 end
 
 % calculate distances
-% load NN_dist_matrix
-
-rho = unifrnd(0.5,1.5,[1,N_cells]); % randomness of connection strength
-D = zeros(N_cells);
+% NOTE: breaking distance & spike arrays
+% into I & E subgroups speeds up computation by ~5x
 
 % distance function depends on network topology
 % switch network_topology
@@ -111,47 +109,72 @@ D = zeros(N_cells);
 %     network_dist = @(X1,X2) norm(X1-X2,2);
 % end
 
-
 % loop over cell pairs
-tic
-isIcell1 = 0;
-for c1 = 1:N_cells
-  if c1==N_E_cells+1, isIcell1 = 1; end
-  isIcell2 = 0;
-  i = coord(c1,1);  j = coord(c1,2);
-  
-  for c2 = 1:N_cells 
-    if c2==N_E_cells+1, isIcell2 = 1; end
-    l = coord(c2,1);  m = coord(c2,2);
-    Wc = W(1+isIcell1, 1+isIcell2);
-%     d = network_dist([i,j],[l,m]);
-%     d = norm([i,j]-[l,m],2);
-    d = sqrt((i-l)^2+(j-m)^2); %FASTEST
-%     d = sqrt((i-l)^2+(j-m)^2);
-    D(c1,c2) = Wc*rho(c1)*exp(-d^2/sigma(1+isIcell2)^2);
-  end
-  
-end
+% network_dist = @(i,j,l,m) sqrt((i-l)^2+(j-m)^2);
+load NN_dist_matrix;
+% 
+% rho = unifrnd(0.5,1.5,[1,N_cells]);
+% tic
+% for c1 = 1:N_cells
+%   i = coord(c1,1);  j = coord(c1,2);  r = rho(c1);
+%   
+%   if c1 < N_E_cells+1
+%     for c2 = 1:N_E_cells
+%       l = coord(c2,1);  m = coord(c2,2);
+%       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+%       D_e(c1,c2) = W_ee*r*exp(-d^2/sigma_e^2);
+%     end
+%     for c2 = 1:N_I_cells
+%       l = coord(c2+N_E_cells,1);  m = coord(c2+N_E_cells,2);
+%       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+%       D_i(c1,c2) = W_ie*r*exp(-d^2/sigma_i^2);
+%     end
+%   else
+%     for c2 = 1:N_E_cells
+%       l = coord(c2,1);  m = coord(c2,2);
+%       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+%       D_e(c1,c2) = W_ei*r*exp(-d^2/sigma_e^2);
+%     end
+%     for c2 = 1:N_I_cells
+%       l = coord(c2+N_E_cells,1);  m = coord(c2+N_E_cells,2);
+%       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+%       D_i(c1,c2) = W_ii*r*exp(-d^2/sigma_i^2);
+%     end
+%   end
+% end
+
 toc(CLOCK);
+% save NN_dist_matrix D_e D_i
 % error('asdf')
-% % % save NN_dist_matrix D
 
 % initialize arrays-------------------------------------------
 gs = zeros(N_cells, NT, 3); % all conductances
 V = zeros(N_cells, NT); % all voltages
 spikes = zeros(N_cells, NT); % raster plot
 Vt = concat_EI(-73.6, -81.6); % current voltage initialized to val1 for E, val2 for I
+I = zeros(N_cells,1); % input current [mV/s]
 last_spike = zeros(N_cells, 1); % when was each cell's last spike?
 g_tr = zeros(N_cells, 1); % after-hyperpol. conductance
 g_e = zeros(N_cells, 1); % synaptic conductance from E cells
 g_i = zeros(N_cells, 1); % synaptic conductance from I cells
-y = zeros(N_cells, 1); % spiking at each time step
-% arrays used to compute gE, gI:
 P_post_e = zeros(N_cells, 1); % post-syn. channel open prob.
 P_post_i = zeros(N_cells, 1); % post-syn. channel open prob.
 P_rel_e = P0 * ones(N_cells, 1); % synaptic release prob.
 P_rel_i = P0 * ones(N_cells, 1); % synaptic release prob.
-I = zeros(N_cells, 1);
+y_e = zeros(N_E_cells, 1); % spiking at each time step
+y_i = zeros(N_I_cells, 1); % spiking at each time step
+
+% additional arrays used for Runge-Kutta
+g_tr2 = zeros(N_cells, 1); % after-hyperpol. conductance
+g_e2 = zeros(N_cells, 1); % synaptic conductance from E cells
+g_i2 = zeros(N_cells, 1); % synaptic conductance from I cells
+g_tr3 = zeros(N_cells, 1); % after-hyperpol. conductance
+g_e3 = zeros(N_cells, 1); % synaptic conductance from E cells
+g_i3 = zeros(N_cells, 1); % synaptic conductance from I cells
+P_post_e2 = zeros(N_cells, 1); % post-syn. channel open prob.
+P_post_i2 = zeros(N_cells, 1); % post-syn. channel open prob.
+P_rel_e2 = P0 * ones(N_cells, 1); % synaptic release prob.
+P_rel_i2 = P0 * ones(N_cells, 1); % synaptic release prob.
 
 % target input current to middle of grid
 % NOTE: We also multiply I by 1000 so that I/C will be in units
@@ -167,28 +190,13 @@ for t = 1:NT
   
   if mod(t,100)==0, fprintf(['t = ' num2str(t) '\n']), end
   
-  % compute after-hyperpolarization conductances (Eqn 2)
-  % first find which cells are refractory
-  if time(t) > Trefract_e + T
-    ghigh_ind = find(last_spike + T + refvec > time(t));
-  else
-    ghigh_ind = [];
-  end
-  g_ind = setdiff(1:N_cells, ghigh_ind);
-  g_tr(ghigh_ind) = g_tr_high;
-  % for non-refractory cells, integrate g_tr
-  g_tr2 = g_tr; g_tr3 = g_tr;
-  g_tr2(g_ind) = g_tr(g_ind) - dt/2*g_tr(g_ind)./tau_tr(g_ind);
-  g_tr3(g_ind) = g_tr(g_ind) - dt*g_tr(g_ind)./tau_tr(g_ind);
+  % we compute values and plug into equations in reverse (Eqn 7 to Eqn 1)
+  % for each conductance we evaluate at t, t+dt/2, t+dt for RK4 integration
   
-  % compute new synaptic conductances g_s (Eqns 3-7)
-  % basically, the equations are presented backwards
+  % first, compute new synaptic conductances g_s (Eqn 7 to Eqn 3)
   % compute S_s (Eqn 7)
-%   DE = D(:,1:N_E_cells);
-%   yE = y(1:N_E_cells);
-%   S_e = DE*yE;
-  S_e = D(:,1:N_E_cells)*y(1:N_E_cells);
-  S_i = D(:,N_E_cells+1:end)*y(N_E_cells+1:end);
+  S_e = D_e*y_e;
+  S_i = D_i*y_i;
   
   % compute alpha_s (Eqn 6)
   alpha_e = alpha_max_e * (1 - exp(-S_e ./ k_e));
@@ -213,6 +221,20 @@ for t = 1:NT
   g_e3 = g_e_max * P_post_e .* P_rel_e;
   g_i2 = g_i_max * P_post_i2 .* P_rel_i2;
   g_i3 = g_i_max * P_post_i .* P_rel_i;
+  
+  % next, compute after-hyperpolarization conductances (Eqn 2)
+  % first find which cells are refractory
+  if time(t) > Trefract_e + T
+    ghigh_ind = find(last_spike + T + refvec > time(t));
+  else
+    ghigh_ind = [];
+  end
+  g_ind = setdiff(1:N_cells, ghigh_ind);
+  g_tr(ghigh_ind) = g_tr_high;
+  % for non-refractory cells, integrate g_tr
+  g_tr2 = g_tr; g_tr3 = g_tr;
+  g_tr2(g_ind) = g_tr(g_ind) - dt/2*g_tr(g_ind)./tau_tr(g_ind);
+  g_tr3(g_ind) = g_tr(g_ind) - dt*g_tr(g_ind)./tau_tr(g_ind);
   
   % compute voltages (Eqn 1)
   % Fourth order Runge-Kutta method to integrate V
@@ -260,8 +282,9 @@ for t = 1:NT
   
   % save voltage, spikes
   V(:,t) = Vt;
-  y = y*0;
-  y(Vt == Vmax) = 1;
+  y_e = y_e*0; y_i = y_i*0;
+  y_e(Vt(1:N_E_cells)==Vmax) = 1;
+  y_i(Vt(N_E_cells+1:end)==Vmax) = 1;
   spikes(last_spike==time(t), t) = 1;
   
   % CHECK THIS??

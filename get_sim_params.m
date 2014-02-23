@@ -58,7 +58,7 @@ network_topology = 'sheet';
 % parameter | description [units] 
 
 % input current
-I0 = 100; % input current [nA]
+I0 = 6; % input current [nA]
 ImVs = I0*1000; % adjusted current so dV/dt is in millivolts/sec
 
 % capacitance & reversal potentials---------------------------
@@ -107,12 +107,12 @@ P0 = 1; % resting prob. of synaptic release
 % W_ii = 4.5; % synaptic strength I->I (4.5 or 1.5)
 sigma_e = 4; % width of E cell kernel
 sigma_i = 1; % width of I cell kernel (3.75 or 1)
-% W_ee = 1.5; % synaptic strength E->E
-% W_ei = 4; % synaptic strength E->I (1.5 or 4)
-% W_ie = 14; % synaptic strength I->E (4.5 or 14)
-% W_ii = 1.5; % synaptic strength I->I (4.5 or 1.5)
+W_ee = 1.5; % synaptic strength E->E
+W_ei = 4; % synaptic strength E->I (1.5 or 4)
+W_ie = 14; % synaptic strength I->E (4.5 or 14)
+W_ii = 1.5; % synaptic strength I->I (4.5 or 1.5)
 
-W_ee = 2.5; W_ei = 0; W_ie = 0; W_ii = 0;
+% W_ee = 2.5; W_ei = 0; W_ie = 0; W_ii = 0;
 
 % presynaptic depression parameters---------------------------
 tau_rel_e = 2e-1; % [s]
