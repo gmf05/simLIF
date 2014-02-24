@@ -164,18 +164,6 @@ P_rel_i = P0 * ones(N_cells, 1); % synaptic release prob.
 y_e = zeros(N_E_cells, 1); % spiking at each time step
 y_i = zeros(N_I_cells, 1); % spiking at each time step
 
-% additional arrays used for Runge-Kutta
-g_tr2 = zeros(N_cells, 1); % after-hyperpol. conductance
-g_e2 = zeros(N_cells, 1); % synaptic conductance from E cells
-g_i2 = zeros(N_cells, 1); % synaptic conductance from I cells
-g_tr3 = zeros(N_cells, 1); % after-hyperpol. conductance
-g_e3 = zeros(N_cells, 1); % synaptic conductance from E cells
-g_i3 = zeros(N_cells, 1); % synaptic conductance from I cells
-P_post_e2 = zeros(N_cells, 1); % post-syn. channel open prob.
-P_post_i2 = zeros(N_cells, 1); % post-syn. channel open prob.
-P_rel_e2 = P0 * ones(N_cells, 1); % synaptic release prob.
-P_rel_i2 = P0 * ones(N_cells, 1); % synaptic release prob.
-
 % target input current to middle of grid
 % NOTE: We also multiply I by 1000 so that I/C will be in units
 % millivolt/sec, matching the units of V, rather than Volt/sec
