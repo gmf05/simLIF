@@ -29,3 +29,5 @@ for t = 1:NT
   
   pause(t_delay);
 end
+
+end
