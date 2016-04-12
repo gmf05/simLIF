@@ -1,36 +1,33 @@
+%% Simulate data from LIF model
 
 % Spatial effects curve
 ext_knots = [0 5 10 20 50 100 125 150 175 200 300 400] * dt_ms;
 ext_knots(1) = 1;
-% b_s = [2 2 1 0.2 0 0]';
-%b_s = 10*[20 10 5 1 0 0 0.0 0.0 0 0.0 0.0 0 0]';
-% b_s = 10*[5 5 2.5 1 0.5 0 0 0.5 2.0 1.0 0.5 0.1 0 0]';
-% b_s = 50*[5 5 2.5 1 0.5 0 0 0 0 0 0 0 0 0]';
-b_ext = 4*[5 5 2.5 1 0.5 0 0 1 2 1 0 0 0 0]';
-% b_s = 0*[5 5 3 0 0.3 1 0.1 0 0 0 0 0 0 0]';
-% b_s = 20*[5 5 3 0 0 0 0 0 0 0 0 0 0 0]';
-% b_s = 10*[10 10 10 2 0 0 0 1 10 10 1 0 0]';
-% b_s = 10*[20 20 10 2 1 1 1 0 0]';
-% g_ext = cubic_spline(s_knots, b_ext);
-% figure, plot(g_ext);
+b_ext = 10*[5 5 2.5 1 0.5 0 0 0 0 0 0 0 0 0]';
+% b_ext = 10*[5 5 2.5 1 0.5 0 0 1 2 1 0 0 0 0]';
+% b_ext = 0*[5 5 3 0 0.3 1 0.1 0 0 0 0 0 0 0]';
 
 % Intrinsic effects curve
 % i_knots = [0 1 20 50 100 300 500 1000] * dt_ms;
 int_knots = [0 5 20 50 100 125 150 175 200 300 400] * dt_ms;
-b_int = 1*[-5 -5 -1 2 0 0 0 0 0 0 0 0 0]';
+% b_int = 1*[-5 -5 -1 0 0 0 0 0 0 0 0 0 0]';
+b_int = 1*[-5 -5 -1 0 0 0 0.5 2 0.5 0 0 0 0]';
 int_knots(1) = 1;
-% max_i = int_knots(end);
-% b_i = [-5 -5 -3 0 0 0 0 0 0 0]';
-% b_i = 3*[-10 -10 -5 -1 2 0.3 0 0 0 0]';
-% b_i = 16*[-5 -5 -3 -1 2 0.3 0 0 0 0]';
-% g_int = cubic_spline(int_knots, b_i);
-% figure, plot(g_int);
 
+% Plot effects curves
+g_int = cubic_spline(int_knots, b_int);
+g_ext = cubic_spline(ext_knots, b_ext);
+figure
+subplot(211), plot(g_int);
+subplot(212), plot(g_ext);
+
+% Simulate LIF model
 [V,dn,gs,time] = sim_LIF_GLM(ext_knots,b_ext,int_knots,b_int);
 dt = time(2)-time(1);
 Nchan = size(dn,1);
 Ntime = length(time);
 
+% % Simulate random (Poisson) data
 % Nchan = 2; dt = 1e-4; Ntime = round(Nsec/dt);
 % dn = poissrnd(10*dt, [Nchan, Ntime]);
 % time = (1:Ntime)*dt;
@@ -38,7 +35,11 @@ Ntime = length(time);
 % Create data object
 d = pp_data(dn, time);
 
-% %% Set parameters
+% Plot
+figure, d.plot('raster');
+
+%% Fit model
+% Set parameters
 % Choose knots and basis functions
 dt_ms = round(.001 / dt);
 T_knots = [0 1]; T_basis = 'indicator';
@@ -74,7 +75,7 @@ p2 = p2.add_covar('spatial1',  neighbors(1), R_knots, R_basis);
 p2 = p2.add_covar('spatial2',  neighbors(2), R_knots, R_basis);
 p2 = p2.add_covar('spatial3',  neighbors(3), R_knots, R_basis);
 
-% Fit models
+% Estimate parameters
 m = pp_model();
 m0 = m.fit(d,p0);
 m1 = m.fit(d,p1);

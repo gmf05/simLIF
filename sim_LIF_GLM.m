@@ -54,9 +54,9 @@ g_int = cubic_spline(int_knots, b_int);
 max_i = int_knots(end); % duration of intrinsic effects
 
 % Set network topology
-N_feedforward = 8;
+N_feedforward = 3;
 rho = unifrnd(0.5,1.5,Ncells);
-sigma = 1;
+sigma = 0.4;
 
 % Connectivity matrix
 W = zeros(Ncells);
@@ -74,7 +74,8 @@ for n = 1:Ncells
   %W(n, neighbors) = 1;
   
   % Adding some distance-dependence, randomness to synapses
-  d = 1./(n-neighbors); % compute distance d
+  %d = 1./(n-neighbors); % compute distance d
+  d = abs(n-neighbors);
   W(n, neighbors) = rho(n, neighbors) .* exp(-(d ./ sigma).^2);
 end
 
