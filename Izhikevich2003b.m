@@ -5,8 +5,10 @@ global params
 global N_cells
 global N_cell_types
 
+params = cell(1,2);
+
 params{1}.name = 'RS';
-params{1}.dim = [20 20];
+params{1}.dim = [50 50];
 params{1}.N_cells = prod(params{1}.dim);
 params{1}.a = [0.01 0.03];
 params{1}.b = [0.2 0.2];
@@ -22,7 +24,7 @@ params{1}.d = [8 8];
 % params{1}.d = [2 2];
 
 params{2}.name = 'FS';
-params{2}.dim = [10 10];
+params{2}.dim = [25 25];
 params{2}.N_cells = prod(params{2}.dim);
 params{2}.a = [0.05 0.15];
 params{2}.b = [0.2 0.2];
@@ -57,7 +59,7 @@ params{1}.weights = [5 10]; params{1}.sigma = 4; params{2}.weights = [10 10]; pa
 
 %----- time parameters
 dt = 1; % time resolution [ms]
-NT = 1e3; % number of time steps
+NT = 5e3; % number of time steps
 time = (1:NT)*dt; % time axis
 
 %------ cell parameters

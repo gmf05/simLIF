@@ -56,7 +56,7 @@ max_i = int_knots(end); % duration of intrinsic effects
 % Set network topology
 N_feedforward = 3;
 rho = unifrnd(0.5,1.5,Ncells);
-sigma = 0.4;
+sigma = 0.03;
 
 % Connectivity matrix
 W = zeros(Ncells);

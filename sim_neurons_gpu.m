@@ -67,35 +67,9 @@ refvec = concat_EI(Trefract_e, Trefract_i);
 % sigma = [sigma_e sigma_i];
 % W = [W_ee W_ie; W_ei W_ii];
 
-% setup coordinates
-fprintf('Calculating cell geometry\n');
-coord = zeros(N_cells, 2);
-
-% NOTE: Assumes for now that there are more E cells than I cells
-% and remaps coord of I cells to approximate pos. relative to E cells
-% if there are more I cells, this mapping should be reversed
-count = 0;
-for i = 1:E_cell_dim(1)
-  coord(count + (1:E_cell_dim(2)), 1) = i;
-  coord(count + (1:E_cell_dim(2)), 2) = 1:E_cell_dim(2);
-  count = count + E_cell_dim(2);
-end
-
-EIratio1 = E_cell_dim(1)/I_cell_dim(1);
-EIratio2 = E_cell_dim(2)/I_cell_dim(2);
-for i = 1:I_cell_dim(1)
-  % no coordinate remapping (NOT advised)
-%   coord(count + (1:I_cell_dim(2)), 1) = i;
-%   coord(count + (1:I_cell_dim(2)), 2) = 1:I_cell_dim(2);
-  
-  % coordinate remapping
-  coord(count + (1:I_cell_dim(2)), 1) = round(i*EIratio1);
-  coord(count + (1:I_cell_dim(2)), 2) = round((1:I_cell_dim(2))*EIratio2);
-  
-  count = count + I_cell_dim(2);
-end
-
-% calculate distances
+% calculate distances (Old 1)
+% Distance computations now done in cell_geometry.m
+%
 % NOTE: breaking distance & spike arrays
 % into I & E subgroups speeds up computation by ~5x
 
@@ -108,46 +82,78 @@ end
 %     []; % NEED TO FILL THIS IN
 %     network_dist = @(X1,X2) norm(X1-X2,2);
 % end
-
+% 
 % loop over cell pairs
 % network_dist = @(i,j,l,m) sqrt((i-l)^2+(j-m)^2);
 % load NN_dist_matrix;
 
-% rho = unifrnd(0.5,1.5,[1,N_cells]);
-load('rho_instance','rho');
-tic
-for c1 = 1:N_cells
-  i = coord(c1,1);  j = coord(c1,2);  r = rho(c1);
-  
-  if c1 < N_E_cells+1
-    for c2 = 1:N_E_cells
-      l = coord(c2,1);  m = coord(c2,2);
-      d = sqrt((i-l)^2+(j-m)^2); %FASTEST
-      D_e(c1,c2) = W_ee*r*exp(-d^2/sigma_e^2);
-    end
-    for c2 = 1:N_I_cells
-      l = coord(c2+N_E_cells,1);  m = coord(c2+N_E_cells,2);
-      d = sqrt((i-l)^2+(j-m)^2); %FASTEST
-      D_i(c1,c2) = W_ie*r*exp(-d^2/sigma_i^2);
-    end
-  else
-    for c2 = 1:N_E_cells
-      l = coord(c2,1);  m = coord(c2,2);
-      d = sqrt((i-l)^2+(j-m)^2); %FASTEST
-      D_e(c1,c2) = W_ei*r*exp(-d^2/sigma_e^2);
-    end
-    for c2 = 1:N_I_cells
-      l = coord(c2+N_E_cells,1);  m = coord(c2+N_E_cells,2);
-      d = sqrt((i-l)^2+(j-m)^2); %FASTEST
-      D_i(c1,c2) = W_ii*r*exp(-d^2/sigma_i^2);
-    end
-  end
-end
+% % % calculate distances (Old 2)
+% % % Distance computations now done in cell_geometry.m
+% % % 
+% % % setup coordinates
+% % fprintf('Calculating cell geometry\n');
+% % 
+% % coord = zeros(N_cells, 2);
+% % 
+% % % NOTE: Assumes for now that there are more E cells than I cells
+% % % and remaps coord of I cells to approximate pos. relative to E cells
+% % % if there are more I cells, this mapping should be reversed
+% % count = 0;
+% % for i = 1:E_cell_dim(1)
+% %   coord(count + (1:E_cell_dim(2)), 1) = i;
+% %   coord(count + (1:E_cell_dim(2)), 2) = 1:E_cell_dim(2);
+% %   count = count + E_cell_dim(2);
+% % end
+% % 
+% % EIratio1 = E_cell_dim(1)/I_cell_dim(1);
+% % EIratio2 = E_cell_dim(2)/I_cell_dim(2);
+% % for i = 1:I_cell_dim(1)
+% %   % no coordinate remapping (NOT advised)
+% % %   coord(count + (1:I_cell_dim(2)), 1) = i;
+% % %   coord(count + (1:I_cell_dim(2)), 2) = 1:I_cell_dim(2);
+% %   
+% %   % coordinate remapping
+% %   coord(count + (1:I_cell_dim(2)), 1) = round(i*EIratio1);
+% %   coord(count + (1:I_cell_dim(2)), 2) = round((1:I_cell_dim(2))*EIratio2);
+% %   
+% %   count = count + I_cell_dim(2);
+% % end
+% % 
+% % rng(0);
+% % rho = unifrnd(0.5,1.5,[1,N_cells]);
+% % 
+% % tic
+% % for c1 = 1:N_cells
+% %   i = coord(c1,1);  j = coord(c1,2);  r = rho(c1);
+% %   
+% %   if c1 < N_E_cells+1
+% %     for c2 = 1:N_E_cells
+% %       l = coord(c2,1);  m = coord(c2,2);
+% %       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+% %       D_e(c1,c2) = W_ee*r*exp(-d^2/sigma_e^2);
+% %     end
+% %     for c2 = 1:N_I_cells
+% %       l = coord(c2+N_E_cells,1);  m = coord(c2+N_E_cells,2);
+% %       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+% %       D_i(c1,c2) = W_ie*r*exp(-d^2/sigma_i^2);
+% %     end
+% %   else
+% %     for c2 = 1:N_E_cells
+% %       l = coord(c2,1);  m = coord(c2,2);
+% %       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+% %       D_e(c1,c2) = W_ei*r*exp(-d^2/sigma_e^2);
+% %     end
+% %     for c2 = 1:N_I_cells
+% %       l = coord(c2+N_E_cells,1);  m = coord(c2+N_E_cells,2);
+% %       d = sqrt((i-l)^2+(j-m)^2); %FASTEST
+% %       D_i(c1,c2) = W_ii*r*exp(-d^2/sigma_i^2);
+% %     end
+% %   end
+% % end
+% % toc(CLOCK);
+% % % save NN_dist_matrix D_e D_i
 
-
-toc(CLOCK);
-% save NN_dist_matrix D_e D_i
-% error('asdf')
+[D_e, D_i] = cell_geometry(E_cell_dim, I_cell_dim, network_topology);
 
 % initialize arrays-------------------------------------------
 gs = zeros(N_cells, NT, 3); % all conductances

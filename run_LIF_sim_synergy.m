@@ -3,23 +3,22 @@
 % Spatial effects curve
 ext_knots = [0 5 10 20 50 100 125 150 175 200 300 400] * dt_ms;
 ext_knots(1) = 1;
-b_ext = 10*[5 5 2.5 1 0.5 0 0 0 0 0 0 0 0 0]';
+b_ext = 25*[5 5 1 0.1 0 0 0 0 0 0 0 0 0 0]';
 % b_ext = 10*[5 5 2.5 1 0.5 0 0 1 2 1 0 0 0 0]';
-% b_ext = 0*[5 5 3 0 0.3 1 0.1 0 0 0 0 0 0 0]';
 
 % Intrinsic effects curve
 % i_knots = [0 1 20 50 100 300 500 1000] * dt_ms;
 int_knots = [0 5 20 50 100 125 150 175 200 300 400] * dt_ms;
 % b_int = 1*[-5 -5 -1 0 0 0 0 0 0 0 0 0 0]';
-b_int = 1*[-5 -5 -1 0 0 0 0.5 2 0.5 0 0 0 0]';
+b_int = 35*[-5 -5 -1 0 0 0 0.5 2 0.5 0 0 0 0]'; % give correlation values similar to seizure
 int_knots(1) = 1;
 
 % Plot effects curves
 g_int = cubic_spline(int_knots, b_int);
 g_ext = cubic_spline(ext_knots, b_ext);
-figure
-subplot(211), plot(g_int);
-subplot(212), plot(g_ext);
+% figure
+% subplot(211), plot(g_int);
+% subplot(212), plot(g_ext);
 
 % Simulate LIF model
 [V,dn,gs,time] = sim_LIF_GLM(ext_knots,b_ext,int_knots,b_int);
@@ -36,7 +35,7 @@ Ntime = length(time);
 d = pp_data(dn, time);
 
 % Plot
-figure, d.plot('raster');
+% figure, d.plot('raster');
 
 %% Fit model
 % Set parameters
@@ -58,22 +57,22 @@ R_knots(1) = 1; % avoid using 0 lag
 % Create parameters object
 p = pp_params();
 response = Nchan;
-neighbors = [Nchan-4 : Nchan-1];
+N_neighbors_model = 2;
+neighbors = [Nchan - N_neighbors_model : Nchan-1];
 p.response = response;
 p = p.add_covar('rate', 0, T_knots, T_basis); 
 p0 = p;
 p = p.add_covar('intrinsic', response, Q_knots, Q_basis);
-p = p.add_covar('spatial1',  neighbors(1), R_knots, R_basis);
-p = p.add_covar('spatial2', neighbors(2), R_knots, R_basis);
-p = p.add_covar('spatial3', neighbors(3), R_knots, R_basis);
-% p = p.add_covar('spatial4', neighbors(4), R_knots, R_basis);
+for n = 1:N_neighbors_model
+  p = p.add_covar(['spatial' num2str(n)],  neighbors(n), R_knots, R_basis);
+end
 
 p1 = p0;
 p1 = p1.add_covar('intrinsic', response, Q_knots, Q_basis);
 p2 = p0;
-p2 = p2.add_covar('spatial1',  neighbors(1), R_knots, R_basis);
-p2 = p2.add_covar('spatial2',  neighbors(2), R_knots, R_basis);
-p2 = p2.add_covar('spatial3',  neighbors(3), R_knots, R_basis);
+for n = 1:N_neighbors_model
+  p2 = p2.add_covar(['spatial' num2str(n)],  neighbors(n), R_knots, R_basis);
+end
 
 % Estimate parameters
 m = pp_model();
@@ -105,3 +104,17 @@ delta_extrinsic = dev_13 ./ dev_02
 
 % Plot resulting model
 figure, m3.plot(d,p);
+
+%% Compute correlations
+
+max_e = ext_knots(end);
+max_i = int_knots(end);
+ac = zeros(d.N_channels, max_i+1);
+for i = 1:d.N_channels
+  temp = xcov(d.dn(i,:), d.dn(i,:), max_i, 'coeff');
+  ac(i,:) = temp(max_i+1:end);
+end
+ac = mean(ac, 1);
+
+figure, plot(ac);
+ylim(0.1*[-1 1])

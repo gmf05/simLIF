@@ -21,8 +21,8 @@ a = 0.02; b = 0.2; c = -65; d = 8; % regular-spiking (RS) cell
 I0 = 5;
 
 %----- network parameters
-E_cell_dim = [1 1];
-I_cell_dim = [0 0];
+E_cell_dim = [30 100];
+I_cell_dim = [15 50];
 N_E_cells = prod(E_cell_dim);
 N_I_cells = prod(I_cell_dim);
 N_cells = N_E_cells + N_I_cells;
